@@ -2,3 +2,10 @@ The Yodel API was not available to us, we needed another way to gather consignme
 
 This script takes an excel file of consignments shipped with Yodel, loads the tracking webpage for each and scrapes the status and a few other bits of information.
 We can scrape a 'Delivered on' date and calculate the days in transit, also we can monitor how long undelivered items have been in the network and highlight potential delays.
+
+This version is very brittle due to the full XPATH used to target DOM elements. 
+
+TO DO: 
+Try using BeautifulSoup4 instead of selenium.
+Keep list of undelivered items and count days since posted, once 10 days have passed add to exception report.
+Set up script on a daily run.
