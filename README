@@ -1,0 +1,4 @@
+The Yodel API was not available to us, we needed another way to gather consignment tracking details en mass.
+
+This script takes an excel file of consignments shipped with Yodel, loads the tracking webpage for each and scrapes the status and a few other bits of information.
+We can scrape a 'Delivered on' date and calculate the days in transit, also we can monitor how long undelivered items have been in the network and highlight potential delays.
