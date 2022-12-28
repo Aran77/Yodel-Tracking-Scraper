@@ -1,3 +1,4 @@
+#Import dependencies, Pandas fo Excel Sheets, Selenium for DOM interaction, datetime for time calculations, regedit for complex matching
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -8,26 +9,32 @@ import time
 import array as arr
 import re
 
+#configure selenium options
 options = Options()
 options.headless = True
 options.add_argument("--window-size=1920,1200")
+#use the chrome driver!
 DRIVER_PATH = 'c:\python\chrome driver\chromedriver.exe'
 driver = webdriver.Chrome(options=options, executable_path=DRIVER_PATH)
+#get current year for use with date calculations
 year = str(datetime.today().year)
 
 def fireitup(tn,pc):
+    #confirgure URL for the tracking website
     url = 'https://www.yodel.co.uk/tracking'
+    #add the tracking number and postcode from th ecxel file, headless=true gives a simpler verson of the tracking page
     bigurl = url +'/' + tn + '/' +pc +'?headless=true'
-    driver.get(bigurl)
-    print(bigurl)
-    driver.implicitly_wait(0.0)
+    driver.get(bigurl)    
+    #brief wait for the dom to load
+    driver.implicitly_wait(0.1)
+    #there are three varying page layouts that are loaded depending on the consignment status, each of ythe follow are unique XPATHs to dom elements, we can use these to test the status of the page before trying to scrape the data
     elements = driver.find_elements(By.XPATH,"/html/body/div/div[3]/div[3]/div/div[1]/div[2]/div[1]/div/div/div[2]")
     elements1 = driver.find_elements(By.XPATH,'/html/body/div[1]/div[3]/div[3]/div/div/div[1]/div[1]/div[2]/div[1]/div/div/div[2]')
     elements2 = driver.find_elements(By.XPATH, '/html/body/div/div[3]/div[3]/div/div[1]/div[2]/div[1]/div/div/div/div[2]')
+    #if the first element is present, check it is displayed and scrape the data into a local variable.
     if elements:
         if elements[0].is_displayed():
             tmpStatus = elements[0].get_attribute('innerHTML').strip()
-        #    print('elements '+ tmpStatus)
             if tmpStatus == "We have updated your parcel with your neighbour preferences.":
                 status = "Neightbour preference updated"
                 dd = 'Expected delivery: ' + driver.find_element(By.XPATH, '/html/body/div[1]/div[3]/div[3]/div/div[1]/div[2]/div[2]/div/div/div[2]').get_attribute('innerHTML').strip()
@@ -91,42 +98,47 @@ def convert_written_date(written_date):
 
 def importData():
     global df
+    #load up the data file containing consignment details, Tracking number and Postcode and required.
     import_file_path = 'c:\\python\\YodelTracker\\yodel.xlsx'
     df = pd.read_excel (import_file_path)
     dds = []
     statuses = []
     dofd = []
+    #Iterate through the dataframe, format data as required
     for index,row in df.iterrows():
         tn = row['Tracking Number']
-        dd = str(row['Processed Date'])[:10]
-        pc = row['Post Code'].replace(" ","")
-        status, delivered = fireitup(tn,pc)
+        dd = str(row['Processed Date'])[:10] #only first 10 chars of date required.
+        pc = row['Post Code'].replace(" ","") #remove space from barcode
+        status, delivered = fireitup(tn,pc) #call the scraping function
+        #if the consignment has been delivered then get the date it was delivered and work out ddays in transit, if not delivered get the current date and work out days in transit.
         if status[:3] == 'Del':
             formatted_date = convert_written_date(delivered[:-6] +' '+ year)
         else:
             formatted_date = datetime.strptime(datetime.now(), "%Y-%m-%d")
-
         date_diff = datetime.strptime(formatted_date, "%Y-%m-%d") - datetime.strptime(dd,"%Y-%m-%d")
         days = date_diff
-        print(days)
-        print(status)
-        print(delivered)
+        #add all the data to lists
         dds.append(delivered)
         statuses.append(status)
         dofd.append(days)
         time.sleep(0)
+    #Insert the data lists into the Dataframe
     df.insert(len(df.columns),'Status', statuses)
     df.insert(len(df.columns),'Delivered on', dds)
     df.insert(len(df.columns), 'Days since dispatch', dofd)
+    #save the updated dataframe to a new Excel File
     df.to_excel('YodelResults.xlsx')
     print(df)
 
 def datediff(d1_str):
+    #get todays date
     d2_str = datetime.today()
+    #format that date
     d2 = d2_str.strftime("%Y-%m-%d")
+    #get dispatch/processed date
     d1 = datetime.strptime(d1_str, '%Y-%m-%d')
+    #minus one from the other to get difference.
     delta = d2 - d1
-    print(delta + ' days')
     return str(delta)
 
 importData()
