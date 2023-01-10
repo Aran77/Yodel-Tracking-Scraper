@@ -13,6 +13,7 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
 from tkinter import filedialog as fd
+import json
 
 
 options = Options()
@@ -55,6 +56,7 @@ def populate_data():
     update_status("Loading Data...")
     c,conn = db.connect_to_db()
     d = db.open_pending_data(c)
+    print(json.dumps(d))
     for row in data_table.get_children():
         data_table.delete(row)
     for i, inner_list in enumerate(d):
@@ -62,9 +64,8 @@ def populate_data():
             l = list(inner_list)
             days = date_diff(l[2], l[9])
             l.append(days)
-
         data_table.insert('', 'end', text=i, values=l)
-    update_status("Data Loaded...")
+    update_status(str(len(d)) + " Consignments Loaded.")
 
 def fireitup(tn,pc):
     update_status("Processing..." + tn)
@@ -125,7 +126,6 @@ def fireitup(tn,pc):
     elif elements2:
         if elements2[0].is_displayed():
             tmpStatus = elements2[0].get_attribute('innerHTML').strip()
-        #    print('Element2 '+ tmpStatus)
             if tmpStatus[:31] == "Your parcel is out for delivery":
                 status = tmpStatus
                 dd = driver.find_element(By.XPATH,'/html/body/div/div[3]/div[3]/div/div[1]/div[2]/div[2]/div/div/div[2]').get_attribute('innerHTML').strip()
@@ -147,11 +147,10 @@ def convert_written_date(written_date):
     return f"{year}-{month_number}-{day}"
 
 def getNewConsignments():
-    db.open_yodel_file()
-    populate_data();
+    #db.open_yodel_file()
+    db.importfromFTP()
+    populate_data()
 
-def message_box(t, m):
-    messagebox.showinfo(t,m)
 
 def refreshData():
     update_status("Updating Statuses...")
@@ -172,14 +171,15 @@ def refreshData():
         else:
             failures.append(tn)
     if failures:
-        message_box("Refresh Complete", "Refresh Complete with some errors\n" + failures)
+        db.message_box("Refresh Complete", "Refresh Complete with some errors\n" + failures)
     else:
-        update_status("Refresh Complete")
+        update_status("Refresh Complete, " + len(datatable) + "consignments refreshed.")
     populate_data()
 
 def importData():
     c,conn = db.connect_to_db()
-    d = db.read_db(c)
+    d = importfromFTP()
+
     failures =[]
     for x in d:
         tn = x['tn']

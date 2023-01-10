@@ -2,6 +2,11 @@ import sqlite3
 from sqlite3 import Error
 import pandas as pd
 from tkinter import filedialog as fd
+import ftplib
+from tkinter import messagebox
+import time
+import csv
+
 
 dbfile = 'tracking.db'
 #create the SQLite connection to our DB file
@@ -32,12 +37,12 @@ def create_table(conn):
 # receive dictionary of values and insert to DB
 def insert_to_db(d,c):
     try:
-        c.execute('''INSERT INTO CONSIGNMENTS
-                VALUES (?,?,?,?,?,?,?,?,?,?)''',(d['oid'],d['tn'], d['dd'],d['oid'],d['exid'],d['source'],d['service'],d['pc'],d['status'],d['ad']))
-        print("Record Inserted.")
+        c.execute('''INSERT INTO CONSIGNMENTS VALUES (?,?,?,?,?,?,?,?,?,?)''',(d['oid'],d['tn'], d['dd'],d['oid'],d['exid'],d['source'],d['service'],d['pc'],d['status'],d['ad']))
+        print("Record Inserted. "+ str(d['oid']))
+        c.commit()
     except Error as e:
         print(e)
-    c.commit()
+
 
 def update_db(c,conn, status, ad, tn):
     c.execute('UPDATE CONSIGNMENTS SET STATUS = "'+ status +'", AD = "'+ ad +'" WHERE TN = "'+ tn +'"')
@@ -88,7 +93,6 @@ def open_yodel_file():
     )
     #create pandas DF
     df = pd.read_csv (import_file_path)
-    print
     #move values to dictionary and send to DB in a loop
     for index,row in df.iterrows():
         if row['SubSource'] == "": row['SubSource'] = "Direct"
@@ -106,12 +110,36 @@ def open_yodel_file():
             }
             # send data to the db
             print("Inserting into DB")
-            print(d)
             insert_to_db(d,conn)
 
+def importfromFTP():
+    c,conn = connect_to_db()
+    ftp = ftplib.FTP('ftp.devmysite.uk') # connect to the FTP server
+    ftp.login('img@devmysite.uk', 'hXl%sOQ%D[R.') # login using the provided credentials
+    ftp.cwd('/') # navigate to the folder containing the CSV file
+    filename="ProcessedOrders.csv"
+    with open(filename, 'wb') as f:
+        ftp.retrbinary('RETR '+ filename, f.write) # download the CSV file to the local machine
+        #ftp.delete(filename)
+    if filename:
+        data = pd.read_csv(filename)
+        print(data.head())
+        for index,row in data.iterrows():
+            if row['SubSource'] == "": row['SubSource'] = "Direct"
+            if row['Shipping service name'][:3] =="Yod":
+                d = {
+                    "tn": row['Tracking number'],
+                    "dd" : str(row['Processed date'])[:10],
+                    "pc" : row['Shipping postcode'].replace(" ",""),
+                    "exid" : row['External reference'],
+                    "oid" : row['Order Id'],
+                    "source" : row['SubSource'],
+                    "service" : row['Shipping service name'],
+                    "status": "",
+                    "ad": ""
+                    }
+                insert_to_db(d,conn)
 
 
-#if __name__ == '__main__':
-#    c,conn = connect_to_db()
-#    #open_yodel_file(c,conn)
-#    read_db(c)
+def message_box(t, m):
+    messagebox.showinfo(t,m)
