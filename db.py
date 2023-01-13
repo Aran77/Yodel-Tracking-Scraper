@@ -17,6 +17,7 @@ def connect_to_db():
   # return the cursor object
   return c, conn
 
+
 """ DEFUNCT - KEEPING FOR STRUCTURE
 def create_table(conn):
     try:
@@ -48,11 +49,13 @@ def update_db(c,conn, status, ad, tn):
     c.execute('UPDATE CONSIGNMENTS SET STATUS = "'+ status +'", AD = "'+ ad +'" WHERE TN = "'+ tn +'"')
     conn.commit()
 
+
 def open_pending_data(c):
     data = []
-    c.execute('''SELECT * FROM CONSIGNMENTS WHERE substr(status, 1, 3) != "Del"''')
+    c.execute('SELECT * FROM CONSIGNMENTS WHERE substr(status, 1, 3) != "Del"')
     data = c.fetchall()
     return data
+
 
 def read_db(c):
     d = []
@@ -75,7 +78,6 @@ def read_db(c):
     else:
         print(str(len(data)) + " rows in table")
     return d
-
 
 
 #Open the source file and grab the data we need. Send it to the insert_to_db function
@@ -111,6 +113,7 @@ def open_yodel_file():
             # send data to the db
             print("Inserting into DB")
             insert_to_db(d,conn)
+
 
 def importfromFTP():
     c,conn = connect_to_db()

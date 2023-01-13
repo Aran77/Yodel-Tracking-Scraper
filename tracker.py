@@ -15,15 +15,12 @@ from tkinter import messagebox
 from tkinter import filedialog as fd
 import json
 
-
 options = Options()
 options.headless = True
 options.add_argument("--window-size=1920,1200")
 DRIVER_PATH = 'c:\python\chrome driver\chromedriver.exe'
 driver = webdriver.Chrome(options=options, executable_path=DRIVER_PATH)
 year = str(datetime.today().year)
-
-
 
 def on_quit():
     driver.quit()
@@ -56,14 +53,15 @@ def populate_data():
     update_status("Loading Data...")
     c,conn = db.connect_to_db()
     d = db.open_pending_data(c)
-    print(json.dumps(d))
+    
     for row in data_table.get_children():
         data_table.delete(row)
     for i, inner_list in enumerate(d):
+        l = list(inner_list)
         if inner_list[9]:
-            l = list(inner_list)
             days = date_diff(l[2], l[9])
             l.append(days)
+        print(i, l)
         data_table.insert('', 'end', text=i, values=l)
     update_status(str(len(d)) + " Consignments Loaded.")
 
@@ -73,9 +71,11 @@ def fireitup(tn,pc):
     bigurl = url +'/' + tn + '/' +pc +'?headless=true'
     driver.get(bigurl)
     #driver.implicitly_wait(0.0)
+                                              
     elements = driver.find_elements(By.XPATH,"/html/body/div/div[3]/div[3]/div/div[1]/div[2]/div[1]/div/div/div[2]")
     elements1 = driver.find_elements(By.XPATH,'/html/body/div[1]/div[3]/div[3]/div/div/div[1]/div[1]/div[2]/div[1]/div/div/div[2]')
     elements2 = driver.find_elements(By.XPATH, '/html/body/div/div[3]/div[3]/div/div[1]/div[2]/div[1]/div/div/div/div[2]')
+    elemets3 = driver.find_elements(By.XPATH, "/html/body/div[1]/div[3]/div[3]/div/div[1]/div[2]/div[1]/div/div/div[2]")
     if elements:
         if elements[0].is_displayed():
             tmpStatus = elements[0].get_attribute('innerHTML').strip()
@@ -129,28 +129,29 @@ def fireitup(tn,pc):
             if tmpStatus[:31] == "Your parcel is out for delivery":
                 status = tmpStatus
                 dd = driver.find_element(By.XPATH,'/html/body/div/div[3]/div[3]/div/div[1]/div[2]/div[2]/div/div/div[2]').get_attribute('innerHTML').strip()
+    elif elements3:
+        print("element3")
+        if elements2[0].is_displayed():
+            tmpStatus = elements2[0].get_attribute('innerHTML').strip()
+            if tmpStatus == "We need some more information about your address. Please chat with us.":
+                status = tmpStatus
+                dd = driver.find_element(Bt.XPATH, '/html/body/div[1]/div[3]/div[3]/div/div[1]/div[2]/div[2]/div/div/div[2]').get_attribute('innerHTML').strip()
     else:
         status = "Error"
         dd = "Error"
-
-    #print('Tracking Code ' + tn.strip() + ' | ' + pc + ' | Status ' + status + ' | ' + dd.strip())
+    print(tn + " "  + status)
     return status.strip(), dd.strip()
 
 def convert_written_date(written_date):
-    # Split the written date into its component parts
     day_of_week, day, month, year = written_date.split()
-    # Convert the month to its numeric equivalent
     month_number = datetime.strptime(month, '%B').month
-    # Remove the ordinal suffix from the day (e.g. "1st" -> "1")
     day = day[:-2]
-    # Return the date in the desired format
     return f"{year}-{month_number}-{day}"
 
 def getNewConsignments():
     #db.open_yodel_file()
     db.importfromFTP()
     populate_data()
-
 
 def refreshData():
     update_status("Updating Statuses...")
@@ -179,7 +180,6 @@ def refreshData():
 def importData():
     c,conn = db.connect_to_db()
     d = importfromFTP()
-
     failures =[]
     for x in d:
         tn = x['tn']
@@ -198,7 +198,6 @@ def importData():
         else:
             failures.append(tn)
         time.sleep(0)
-
     if failures:
         print('Failures:')
         print(failures)
@@ -221,7 +220,6 @@ treeScroll = ttk.Scrollbar(data_table)
 treeScroll.configure(command=data_table.yview)
 data_table.configure(yscrollcommand=treeScroll.set)
 treeScroll.pack(side='right', fill='both')
-
 data_table.pack(side='top', fill='both', expand=True)
 
 status = tk.Label(data_table_frame, textvariable=status_text, text="Ready", bd=1, relief=tk.SUNKEN, anchor=tk.W)
@@ -236,7 +234,6 @@ for i in headings:
 data_table.column("#0", width=0)
 for i in headings:
     data_table.heading(i, text=i)
-
 
 populate_data()
 window.mainloop()
