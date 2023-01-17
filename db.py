@@ -8,6 +8,7 @@ import time
 import csv
 
 
+
 dbfile = 'tracking.db'
 #create the SQLite connection to our DB file
 def connect_to_db():
@@ -52,7 +53,7 @@ def update_db(c,conn, status, ad, tn):
 
 def open_pending_data(c):
     data = []
-    c.execute('SELECT * FROM CONSIGNMENTS WHERE substr(status, 1, 3) != "Del"')
+    c.execute('SELECT * FROM CONSIGNMENTS WHERE substr(status, 1, 3) != "Del" AND substr(status,1,3) !="DTD"')
     data = c.fetchall()
     return data
 
@@ -123,7 +124,7 @@ def importfromFTP():
     filename="ProcessedOrders.csv"
     with open(filename, 'wb') as f:
         ftp.retrbinary('RETR '+ filename, f.write) # download the CSV file to the local machine
-        #ftp.delete(filename)
+        ftp.delete(filename)
     if filename:
         data = pd.read_csv(filename)
         print(data.head())
@@ -146,3 +147,5 @@ def importfromFTP():
 
 def message_box(t, m):
     messagebox.showinfo(t,m)
+
+
