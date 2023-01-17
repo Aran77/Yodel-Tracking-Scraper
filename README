@@ -6,7 +6,7 @@ We can scrape a 'Delivered on' date and calculate the days in transit, also we c
 This version is very brittle due to the full XPATH used to target DOM elements and also the matching of status being based on Text comparisons rather than codes.
 
 TO DO: 
-Try using BeautifulSoup4 instead of selenium.
-Keep list of undelivered items and count days since posted, once 10 days have passed add to exception report.
-Set up script on a daily chron.
-Import from FTP, using Linnwork order managment to export the previous days porcessed orders to ftp
+Try using BeautifulSoup4 instead of selenium. *** DONE ***
+Keep list of undelivered items and count days since posted *** DONE ***
+Set up script on a daily chron *** DONE ***
+Import from FTP, using Linnwork order managment to export the previous days porcessed orders to ftp *** DONE ***
