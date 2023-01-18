@@ -7,4 +7,4 @@ TO DO:
 Try using BeautifulSoup4 instead of selenium. *** DONE ***
 Keep list of undelivered items and count days since posted *** DONE ***
 Set up script on a daily chron *** DONE ***
-Import from FTP, using Linnwork order managment to export the previous days porcessed orders to ftp *** DONE ***
+Import from FTP, using Linnwork order managment to export the previous days processed orders to ftp *** DONE ***
