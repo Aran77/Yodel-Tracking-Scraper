@@ -3,11 +3,7 @@ from sqlite3 import Error
 import pandas as pd
 from tkinter import filedialog as fd
 import ftplib
-from tkinter import messagebox
-import time
-import csv
-
-
+import tkinter.messagebox as messagebox
 
 dbfile = 'tracking.db'
 #create the SQLite connection to our DB file
@@ -39,16 +35,34 @@ def create_table(conn):
 # receive dictionary of values and insert to DB
 def insert_to_db(d,c):
     try:
-        c.execute('''INSERT INTO CONSIGNMENTS VALUES (?,?,?,?,?,?,?,?,?,?)''',(d['oid'],d['tn'], d['dd'],d['oid'],d['exid'],d['source'],d['service'],d['pc'],d['status'],d['ad']))
+        c.execute('''INSERT INTO CONSIGNMENTS VALUES (?,?,?,?,?,?,?,?,?,?,?,?)''',(d['oid'],d['tn'], d['dd'],d['oid'],d['exid'],d['source'],d['service'],d['pc'],d['status'],d['ad'],0,0))
         print("Record Inserted. "+ str(d['oid']))
         c.commit()
     except Error as e:
         print(e)
 
+def update_claim(c,conn, tn, claim):
+    try:
+        c.execute('UPDATE CONSIGNMENTS SET claim = '+ str(claim) +' where tn = "'+ tn +'"')
+        conn.commit()
+        print("Updated Claim to "+ str(claim))
+    except Error as e:
+        print(e)
+
+def update_inv(c, conn, tn, inv):
+    try:
+        c.execute('UPDATE CONSIGNMENTS SET inv = '+ str(inv) +' where tn = "'+ tn +'"')
+        conn.commit()
+        print("Updated Claim to "+ str(inv))
+    except Error as e:
+        print(e)
 
 def update_db(c,conn, status, ad, tn):
-    c.execute('UPDATE CONSIGNMENTS SET STATUS = "'+ status +'", AD = "'+ ad +'" WHERE TN = "'+ tn +'"')
-    conn.commit()
+    try:
+        c.execute('UPDATE CONSIGNMENTS SET STATUS = "'+ str(status) +'", AD = "'+ ad +'" WHERE TN = "'+ tn +'"')
+        conn.commit()
+    except Error as e:
+        print(e)
 
 
 def open_pending_data(c):
@@ -123,27 +137,31 @@ def importfromFTP():
     ftp.cwd('/') # navigate to the folder containing the CSV file
     filename="ProcessedOrders.csv"
     with open(filename, 'wb') as f:
-        ftp.retrbinary('RETR '+ filename, f.write) # download the CSV file to the local machine
-        ftp.delete(filename)
-    if filename:
-        data = pd.read_csv(filename)
-        print(data.head())
-        for index,row in data.iterrows():
-            if row['SubSource'] == "": row['SubSource'] = "Direct"
-            if row['Shipping service name'][:3] =="Yod":
-                d = {
-                    "tn": row['Tracking number'],
-                    "dd" : str(row['Processed date'])[:10],
-                    "pc" : row['Shipping postcode'].replace(" ",""),
-                    "exid" : row['External reference'],
-                    "oid" : row['Order Id'],
-                    "source" : row['SubSource'],
-                    "service" : row['Shipping service name'],
-                    "status": "",
-                    "ad": ""
-                    }
-                insert_to_db(d,conn)
-
+        try:
+            ftp.retrbinary('RETR '+ filename, f.write) # download the CSV file to the local machine
+            ftp.delete(filename)    
+            if filename:
+                data = pd.read_csv(filename)
+                print(data.head())
+                for index,row in data.iterrows():
+                    if row['SubSource'] == "": row['SubSource'] = "Direct"
+                    if row['Shipping service name'][:3] =="Yod":
+                        d = {
+                            "tn": row['Tracking number'],
+                            "dd" : str(row['Processed date'])[:10],
+                            "pc" : row['Shipping postcode'].replace(" ",""),
+                            "exid" : row['External reference'],
+                            "oid" : row['Order Id'],
+                            "source" : row['SubSource'],
+                            "service" : row['Shipping service name'],
+                            "status": "",
+                            "ad": ""
+                            }
+                        insert_to_db(d,conn)
+                message_box("Success", "New Consignments imported "+ len(data))
+        except ftplib.error_perm:
+            print("Error: File not found on FTP Server")
+            message_box("Error", "No Order file to import")
 
 def message_box(t, m):
     messagebox.showinfo(t,m)

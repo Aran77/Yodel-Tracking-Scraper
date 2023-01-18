@@ -36,6 +36,13 @@ height = int(screen_height * 0.9)
 # Set the dimensions of the window
 window.geometry(f"{width}x{height}")
 
+def update_progressbar(pbar, value):
+    pbar.config(value=value)
+    pbar.update()
+    print(value)
+    if value == 100:
+        pbar.pack_forget()
+
 #handles the clicking of rows to get the tracking URL
 def tree_click_handler(event):
     cur_item = data_table.item(data_table.focus())
@@ -67,16 +74,17 @@ def populate_data():
 
 #Remove an item from data table
 def delete_item():
-    selected_item = data_table.selection()[0] # get the selected item
-    tmptn = data_table.item(selected_item, "values")[1]
-    print(tmptn)
-    confirm = messagebox.askyesno("Confirm","Are you sure you want to delete this item?")
-    if confirm:
-        data_table.delete(selected_item) # delete the selected item
-        c,conn = db.connect_to_db()
-        db.updatedb(c, conn, "DTD", "NA",tmptn)
-    else:
-        return
+    if data_table.selection():
+        selected_item = data_table.selection()[0] # get the selected item
+        tmptn = data_table.item(selected_item, "values")[1]
+        print(tmptn)
+        confirm = messagebox.askyesno("Confirm","Are you sure you want to delete this item?")
+        if confirm:
+            data_table.delete(selected_item) # delete the selected item
+            c,conn = db.connect_to_db()
+            db.updatedb(c, conn, "DTD", "NA",tmptn)
+        else:
+            return
 
 #Main scraping function
 def scrapethePage(tn, pc):
@@ -97,8 +105,7 @@ def scrapethePage(tn, pc):
                 content1 = tmpdiv.get_text()
                 dd = content1.strip()
             if status[:30] == "Your parcel has been delivered":
-                status = "Delivered"  
-            print(tn)          
+                status = "Delivered"            
         return status, dd
     else:
         status = "Error"
@@ -118,11 +125,73 @@ def getNewConsignments():
     db.importfromFTP()
     populate_data()
 
+#function to track consignment claims
+def updateClaim():
+    c,conn = db.connect_to_db()
+    if data_table.selection():
+        selected_item = data_table.selection()[0] # get the selected item
+        current_values = data_table.item(selected_item)['values']
+        tmptn = current_values[1]
+        claim = current_values[11]
+        print("Claim: " + str(claim))
+        if claim == 1:
+            db.update_claim(c,conn,tmptn,int(claim)-1)
+            current_values[11] = 0
+            data_table.item(selected_item, values=current_values)
+            print("1 processed")
+        elif claim == 0:
+            db.update_claim(c,conn,tmptn,int(claim)+1)
+            current_values[11] = 1
+            data_table.item(selected_item, values=current_values)
+            print("0 processed")
+        else:
+            db.update_claim(c,conn,tmptn,1)
+            current_values[11] = 1
+            data_table.item(selected_item, values=current_values)
+            print("None processed")
+        data_table.update()
+        update_status("Claim Updated") 
+
+
+
+#function to track consignment investigations
+def updateInv():
+    c,conn = db.connect_to_db()
+    if data_table.selection():
+        selected_item = data_table.selection()[0] # get the selected item
+        current_values = data_table.item(selected_item)['values']
+        tmptn = current_values[1]
+        inv = current_values[10]
+        print("Inv: " + str(inv))
+        if inv == 1:
+            db.update_inv(c,conn,tmptn,int(inv)-1)
+            current_values[10] = 0
+            data_table.item(selected_item, values=current_values)
+            print("1 processed")
+        elif inv == 0:
+            db.update_inv(c,conn,tmptn,int(inv)+1)
+            current_values[10] = 1
+            data_table.item(selected_item, values=current_values)
+            print("0 processed")
+        else:
+            db.update_inv(c,conn,tmptn,1)
+            current_values[10] = 1
+            data_table.item(selected_item, values=current_values)
+            print("None processed")
+        data_table.update()
+        update_status("Investigation Updated")       
+
 #Main function to call API
 def refreshData():
     update_status("Updating Statuses...")
     c,conn = db.connect_to_db()
+    pbar.config(maximum=len(data_table.get_children()))
+    pbar.start()
+    increment = 100/len(data_table.get_children())
+    cnt=0
+    print(increment)
     for line in data_table.get_children():
+        cnt+=increment
         d= data_table.item(line)["values"]
         tn = d[1]
         dd = d[2]
@@ -131,22 +200,28 @@ def refreshData():
         failures = []
         if pc != "Redacted":
             status, delivered = scrapethePage(tn,pc)
-            print("********** date: "+ delivered)
+            #print("********** date: "+ delivered)
             if status[:30] == 'Your parcel has been delivered':                
-                formatted_date = convert_written_date(delivered +' '+ year)
+                #formatted_date = convert_written_date(delivered +' '+ year)
+                formatted_date = datetime.strftime(datetime.now(), "%Y-%m-%d")
             else:
                 if delivered != "Unavailable at this time" and delivered != "Today" and ":" not in delivered and "stop" not in status:
-                    formatted_date = convert_written_date(delivered +' '+ year)                
+                    formatted_date = datetime.strftime(datetime.now(), "%Y-%m-%d")
+                    # formatted_date = convert_written_date(delivered +' '+ year)                
                 else:
                     formatted_date = datetime.strftime(datetime.now(), "%Y-%m-%d")
             db.update_db(c,conn, status, formatted_date, tn)
+            update_progressbar(pbar, cnt)
         else:
             failures.append(tn)
+    pbar.pack_forget()
+        
     if failures:
         db.message_box("Refresh Complete", "Refresh Complete with some errors\n" + failures)
-    else:
+    else:        
+        populate_data()
         update_status("Refresh Complete")
-    populate_data()
+        db.message_box("Refresh Complete", "Refresh Complete")
 
 #defunct, this was our initial method to populate DB
 def importData():
@@ -181,18 +256,24 @@ control_bar = tk.Frame(window)
 control_bar.pack(side='top', fill='x')
 #buttons
 open_new_data_button = tk.Button(control_bar, text="Import New Consignments", command=getNewConsignments)
-open_new_data_button.pack(side='left')
+open_new_data_button.pack(side='left', padx='5')
 get_statuses_button = tk.Button(control_bar, text="Refresh", command=refreshData)
-get_statuses_button.pack(side='left')
+get_statuses_button.pack(side='left', padx='5')
+claim_button = tk.Button(control_bar, text="Claimed?", command=updateClaim)
+claim_button.pack(side='left', padx='5')
+inv_button = tk.Button(control_bar, text="Investigated?", command=updateInv)
+inv_button.pack(side='left', padx='5')
 delete_button = tk.Button(control_bar, text="Delete", command=delete_item, bg="red",fg="white")
-delete_button.pack(side='left')
+delete_button.pack(side='left', padx='5')
 quit_button = tk.Button(control_bar, text="Quit", command=on_quit)
 quit_button.pack(side='right')
 #create data table frame
 data_table_frame = tk.Frame(window)
 data_table_frame.pack(side='bottom', fill='both', expand=True)
-data_table = ttk.Treeview(data_table_frame)
+data_table = ttk.Treeview(data_table_frame, selectmode='browse')
 #add a veritacal scrollbar
+pbar = ttk.Progressbar(window, orient="horizontal", mode="determinate")
+pbar.pack(side=tk.TOP, fill=tk.X)
 treeScroll = ttk.Scrollbar(data_table)
 treeScroll.configure(command=data_table.yview)
 data_table.configure(yscrollcommand=treeScroll.set)
@@ -201,14 +282,16 @@ data_table.pack(side='top', fill='both', expand=True)
 status = tk.Label(data_table_frame, textvariable=status_text, text="Ready", bd=1, relief=tk.SUNKEN, anchor=tk.W)
 status.pack(side=tk.BOTTOM, fill=tk.X)
 #create headings for data_table
-headings = ('ID','Tracking_Number', 'Dispatch_Date','Order_ID','Ex_Order_ID','Source','Service','Postcode','Status','Expected','Days')
-data_table['columns'] = ('ID','Tracking_Number', 'Dispatch_Date','Order_ID','Ex_Order_ID','Source','Service','Postcode','Status','Expected','Days')
+headings = ('ID','Tracking_Number', 'Dispatch_Date','Order_ID','Ex_Order_ID','Source','Service','Postcode','Status','Expected','Investigated', 'Claimed','Days')
+data_table['columns'] = ('ID','Tracking_Number', 'Dispatch_Date','Order_ID','Ex_Order_ID','Source','Service','Postcode','Status','Expected','Investigated', 'Claimed','Days')
 #parse headings into datatable
 for i in headings:
     data_table.heading(i, text=i)
 for i in headings:
     data_table.column(i, stretch=tk.YES, width=100)    
 data_table.column("#0", width=0)
+
+pbar.config(value=0)
 
 #Populate Data is our main Fresh function
 populate_data()
