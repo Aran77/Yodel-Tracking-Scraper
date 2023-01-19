@@ -12,5 +12,7 @@ Instead I decided to opt for a scraper. Selenium was my first choice but I had i
 
 ### TO DO: 
 ~~Try using BeautifulSoup4 instead of selenium.~~
+
 ~~Keep list of undelivered items and count days since posted~~
+
 ~~Import from FTP, using Linnwork order managment to export the previous days processed orders to ftp~~
