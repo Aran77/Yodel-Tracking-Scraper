@@ -13,7 +13,7 @@ Instead I decided to opt for a scraper. Selenium was my first choice but I had i
 * I went with a SQLite Databse as the requirements for storing and accessing data are mininal.
 * Tkinter is used to create a functional GUI
 * BeautifulSoup4 is utilised for scraping the Yodel Tracking Page
-* A Tkinter Treeview is used to displaythe tabular data
+* A Tkinter Treeview is used to display the tabular data
 * Functions created to track the current state of our investigation and claim for lost parcels
 
 
