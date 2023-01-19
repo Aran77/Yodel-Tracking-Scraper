@@ -29,4 +29,4 @@ Instead I decided to opt for a scraper. Selenium was my first choice but I had i
 
 ~~Search Function - Super easy~~
 
-~~Creat email body copy and paste ~~
+~~CreatE email body copy and paste~~
