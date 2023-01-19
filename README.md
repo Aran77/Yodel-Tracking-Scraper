@@ -25,6 +25,8 @@ Instead I decided to opt for a scraper. Selenium was my first choice but I had i
 
 ~~Import from FTP, using Linnwork order managment to export the previous days processed orders to ftp~~
 
-Implement multi-page tabs that show different statuses. For instance, One for 'pending consignments', one for 'delivered consignments' and one for 'lost but claimed for' consignments
+~~Implement multi-page tabs that show different statuses. For instance, One for 'pending consignments', one for 'delivered consignments' and one for 'lost but claimed for' consignments~~
 
-Search Function - Super easy
+~~Search Function - Super easy~~
+
+~~Creat email body copy and paste ~~
