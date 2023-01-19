@@ -64,13 +64,29 @@ def update_db(c,conn, status, ad, tn):
     except Error as e:
         print(e)
 
-
 def open_pending_data(c):
     data = []
     c.execute('SELECT * FROM CONSIGNMENTS WHERE substr(status, 1, 3) != "Del" AND substr(status,1,3) !="DTD"')
     data = c.fetchall()
     return data
 
+def open_delivered_data(c):
+    data = []
+    c.execute('SELECT * FROM CONSIGNMENTS WHERE substr(status, 1, 3) = "Del" OR substr(status,1,3) ="DTD"')
+    data = c.fetchall()
+    return data
+
+def open_claim_data(c):
+    data = []
+    c.execute('SELECT * FROM CONSIGNMENTS WHERE claim = 1')
+    data = c.fetchall()
+    return data
+
+def open_inv_data(c):
+    data = []
+    c.execute('SELECT * FROM CONSIGNMENTS WHERE inv = 1 and claim = 0')
+    data = c.fetchall()
+    return data
 
 def read_db(c):
     d = []
