@@ -416,45 +416,23 @@ for i in headings:
     data_table4.column(i, stretch=tk.YES, width=100)
 
 #configure widths of columns in our 4 tree views
+columns = ["#0", "#1", "#3", "#4", "#8", "#10", "#11", "#12", "#13", "#9"]
+width = 50
+for column in columns:
+    data_table.column(column, width=width)
+    data_table2.column(column, width=width)
+    data_table3.column(column, width=width)
+    data_table4.column(column, width=width)
+
+#SET THE REMAINING COLUMNS WIDTHS
+
 data_table.column("#0", width=0)
-data_table.column("#1", width=50)
-data_table.column("#3", width=50)
-data_table.column("#4", width=50)
-data_table.column("#8", width=50)
-data_table.column("#10", width=50)
-data_table.column("#11", width=50)
-data_table.column("#12", width=50)
-data_table.column("#13", width=50)
 data_table.column("#9", width=250)
 data_table2.column("#0", width=0)
-data_table2.column("#1", width=50)
-data_table2.column("#3", width=50)
-data_table2.column("#4", width=50)
-data_table2.column("#8", width=50)
-data_table2.column("#10", width=50)
-data_table2.column("#11", width=50)
-data_table2.column("#12", width=50)
-data_table2.column("#13", width=50)
 data_table2.column("#9", width=250)
 data_table3.column("#0", width=0)
-data_table3.column("#1", width=50)
-data_table3.column("#3", width=50)
-data_table3.column("#4", width=50)
-data_table3.column("#8", width=50)
-data_table3.column("#10", width=50)
-data_table3.column("#11", width=50)
-data_table3.column("#12", width=50)
-data_table3.column("#13", width=50)
 data_table3.column("#9", width=250)
 data_table4.column("#0", width=0)
-data_table4.column("#1", width=50)
-data_table4.column("#3", width=50)
-data_table4.column("#4", width=50)
-data_table4.column("#8", width=50)
-data_table4.column("#10", width=50)
-data_table4.column("#11", width=50)
-data_table4.column("#12", width=50)
-data_table4.column("#13", width=50)
 data_table4.column("#9", width=250)
 
 #configure start point for progress bar
